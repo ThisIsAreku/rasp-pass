@@ -49,6 +49,6 @@ if [ -e $hostapd_pid ]; then
     sudo kill -SIGKILL $(cat $hostapd_pid)
 fi
 
-sudo hostapd -B -P $hostapd_pid $hostapd_conf
+sudo hostapd -B -f /dev/null -P $hostapd_pid $hostapd_conf
 
 date +"%d/%m/%Y %T" > $rundir/last_rotation
