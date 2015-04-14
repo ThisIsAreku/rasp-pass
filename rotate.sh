@@ -19,10 +19,10 @@ currdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 rundir=$currdir/run
 logdir=$currdir/log
 
-if [ ! -d $rundir ]; do 
+if [ ! -d $rundir ]; then
     mkdir $rundir
 fi
-if [ ! -d $logdir ]; do
+if [ ! -d $logdir ]; then
     mkdir $logdir
 fi
 
