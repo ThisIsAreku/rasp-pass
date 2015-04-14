@@ -1,0 +1,3 @@
+# One mac per line
+# aa:bb:cc:dd:ee:ff
+# Note: hostapd seems to only accept lower-case mac separated by :
