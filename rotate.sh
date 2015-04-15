@@ -26,6 +26,8 @@ if [ ! -d $logdir ]; then
     mkdir $logdir
 fi
 
+rotate_ts=$(date +"%d/%m/%Y %T");
+
 mac_accept=$currdir/mac_accept
 homepass_mac=$currdir/homepass_mac
 
@@ -33,22 +35,32 @@ hostapd_conf=$rundir/hostapd.conf
 hostapd_pid=$rundir/hostapd.pid
 hostapd_log=$logdir/hostapd.log
 
+if [ -f $hostapd_log ]; then
+    logsize=$(du -k "$hostapd_log" | cut -f 1)
+    if [ $logsize -ge 500 ]; then
+        echo Rotating logfile
+        bcklog=$logdir/hostapd_$(date +"%Y-%m-%d_%H-%M-%s").log
+        sudo mv $hostapd_log $bcklog
+        sudo gzip $bcklog
+    fi
+fi
+
 ssid=attwifi
 prev_bssid=$(cat $rundir/prev_bssid 2> /dev/null)
 bssid=$prev_bssid
 while [ "$prev_bssid" = "$bssid" ]; do
     bssid=$(cat $homepass_mac | sed /^#/d | sort -R | head -n1 | tr '[:upper:]' '[:lower:]')
 done
-echo Previous mac was: $prev_bssid
-echo Using mac: $bssid
+echo -e "Previous mac: \t $prev_bssid"
+echo -e "Using mac: \t $bssid"
 echo $bssid > $rundir/prev_bssid
 
 cat $currdir/hostapd.conf.model | sed s/%ssid%/$ssid/ |	sed s/%bssid%/$bssid/ |	sed s#%accept_mac_file%#$mac_accept# > $hostapd_conf
 if [ -e $hostapd_pid ]; then
     echo hostapd is running, stopping
-    sudo kill -SIGKILL $(cat $hostapd_pid)
+    sudo kill -TERM $(cat $hostapd_pid)
 fi
 
-sudo hostapd -B -f /dev/null -P $hostapd_pid $hostapd_conf
+sudo hostapd -B -f $hostapd_log -P $hostapd_pid $hostapd_conf
 
-date +"%d/%m/%Y %T" > $rundir/last_rotation
+echo $rotate_ts > $rundir/last_rotation
