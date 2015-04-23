@@ -26,6 +26,13 @@ if [ ! -d $logdir ]; then
     mkdir $logdir
 fi
 
+if [ -f rotation_enabled ]; then
+    if [ $(cat rotation_enabled | tr -d '[[:space:]]') != '1' ]; then
+        echo Rotation is disabled
+        exit 0
+    fi
+fi
+
 rotate_ts=$(date +"%d/%m/%Y %T");
 
 mac_accept=$currdir/mac_accept
@@ -61,6 +68,35 @@ if [ -e $hostapd_pid ]; then
     sudo kill -TERM $(cat $hostapd_pid)
 fi
 
-sudo hostapd -B -f $hostapd_log -P $hostapd_pid $hostapd_conf
+sudo ifconfig wlan0 192.168.23.254
+sudo hostapd -B -f $hostapd_log -t -P $hostapd_pid $hostapd_conf
+sudo ifconfig wlan0 192.168.23.254
+
+echo "MASQUERADE rule"
+if sudo iptables -t nat -C POSTROUTING -o eth0 -j MASQUERADE; then
+	echo -e "\tSkipped"
+else
+	echo -e "\tAdded"
+	sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+fi
+
+echo "ACCEPT wlan0 -> eth0"
+if sudo iptables -C FORWARD -i wlan0 -o eth0 -j ACCEPT; then
+	echo -e "\tSkipped"
+else
+	echo -e "\tAdded"
+	sudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
+fi
+
+echo "ACCEPT eth0 -> wlan0"
+if sudo iptables -C FORWARD -i eth0 -o wlan0 -j ACCEPT; then
+	echo -e "\tSkipped"
+else
+	echo -e "\tAdded"
+	sudo iptables -A FORWARD -i eth0 -o wlan0 -j ACCEPT
+fi
+
+sudo service dnsmasq start
+
 
 echo $rotate_ts > $rundir/last_rotation
