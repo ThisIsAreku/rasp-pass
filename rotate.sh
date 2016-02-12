@@ -52,7 +52,7 @@ if [ -f $hostapd_log ]; then
     fi
 fi
 
-ssid=attwifi
+ssid=NintendoSpotPass1
 prev_bssid=$(cat $rundir/prev_bssid 2> /dev/null)
 bssid=$prev_bssid
 while [ "$prev_bssid" = "$bssid" ]; do
